@@ -58,6 +58,5 @@ int main()
 	std::cout << "主线程1" << std::endl;
 	std::cout << "主线程2" << std::endl;
 	std::cout << "主线程3" << std::endl;
-	std::cout << "主线程4" << std::endl;
 }
 
