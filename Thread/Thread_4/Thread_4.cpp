@@ -140,8 +140,7 @@ int main()
 			std::lock_guard<std::mutex> sguard2(my_mutex2, std::adopt_lock);
 
 			msgRecvQueue.push_back(i);
-			my_mutex2.unlock();
-			my_mutex2.unlock();
+
 
 		}
 	}*/
