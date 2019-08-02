@@ -217,3 +217,95 @@ void inMsgRecvQueue()
 }
 ```
 
+
+
+## 四 recuraive_mutex 递归的独占互斥量
+
+**std::mutex**： 独占互斥量，自己lock时别人lock不了
+
+**recuraive_mutex**： 递归的独占互斥量，允许同一个线程，同一个互斥量多次.lock()，效率上比mutex要差一些
+
+recuraive_mutex也有lock，也有unlock()
+
+```c++
+
+	void testfun1()
+	{
+		std::lock_guard<std::recursive_mutex> sbguard(my_mutex);
+		//do something...
+		testfun2();
+	}
+
+	void testfun2()
+	{
+		std::lock_guard<std::recursive_mutex> sbguard(my_mutex);
+		//do something...
+	}
+```
+
+
+
+## 五 带超时的互斥量std::timed_mutex和std::recursive_timed_mutex
+
+### 5.1 std::timed_mutex: 是带超时功能的独占互斥量
+
+**try_lock_for()** : 参数是一段时间，等待一段时间。如果拿到了锁，或者等待超过时间没拿到锁，就走下来
+
+**try_lock_until()** : 参数是一个未来的时间点，在这个未来的时间没到的时间内，如果拿到了锁，那么就走下了；如果时间到了，没拿到锁，程序流程也走下来
+
+```c++
+void inMsgRecvQueue()
+{
+    for (int i = 0; i < 100000; i++)
+    {
+        std::cout << "inMsgRecvQueue执行，插入一个元素" << i << std::endl;
+
+        std::chrono::microseconds timeout(100);
+        if (my_mutex.try_lock_for(timeout)) //等待100ms来尝试获取锁
+        {
+            //在这100ms内拿到了锁
+            msgRecvQueue.push_back(i);
+            my_mutex.unlock(); //用完了要解锁
+        }
+        else
+        {
+            //没拿到锁
+            std::chrono::microseconds timeout2(100);
+            std::this_thread::sleep_for(timeout2);
+        }
+    }
+}
+private:
+	std::timed_mutex my_mutex; //是带超时功能的独占互斥量
+```
+
+```c++
+void inMsgRecvQueue()
+{
+    for (int i = 0; i < 100000; i++)
+    {
+        std::cout << "inMsgRecvQueue执行，插入一个元素" << i << std::endl;
+
+        std::chrono::microseconds timeout(100);
+        if (my_mutex.try_lock_until(std::chrono::steady_clock::now() + timeout)) 
+			{
+				msgRecvQueue.push_back(i);
+				my_mutex.unlock(); //用完了要解锁
+			}
+			else
+			{
+				//没拿到锁
+				std::chrono::microseconds timeout2(100);
+				std::this_thread::sleep_for(timeout2);
+			}
+    }
+}
+private:
+	std::timed_mutex my_mutex; //是带超时功能的独占互斥量
+```
+
+
+
+### 5.2 std::recursive_timed_mutex
+
+是带超时功能的递归独占互斥量(允许同一个线程多次获取这个互斥量)
